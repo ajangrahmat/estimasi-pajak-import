@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalkulator Pajak Impor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            iosBlue: '#007AFF',
+            iosGray: '#F2F2F7',
+            iosDarkGray: '#8E8E93',
+            iosCard: '#FFFFFF',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600&display=swap');
+    body {
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .ios-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      background-size: 1em;
+    }
+    .ios-toggle {
+      position: relative;
+      width: 52px;
+      height: 32px;
+      border-radius: 16px;
+      background-color: #E9E9EB;
+      transition: background-color 0.3s;
+    }
+    .ios-toggle::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 28px;
+      height: 28px;
+      border-radius: 14px;
+      background-color: white;
+      transition: transform 0.3s;
+    }
+    .ios-toggle.active {
+      background-color: #34C759;
+    }
+    .ios-toggle.active::after {
+      transform: translateX(20px);
+    }
+  </style>
+</head>
+<body class="bg-iosGray min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+      <!-- Header -->
+      <div class="bg-iosBlue py-4 px-6">
+        <h1 class="text-white text-xl font-semibold text-center">Kalkulator Pajak Impor</h1>
+      </div>
+      
+      <!-- Form -->
+      <div class="p-6 space-y-6">
+        <!-- Harga Barang -->
+        <div class="space-y-1">
+          <label class="text-iosDarkGray text-sm font-medium">Harga Barang (USD)</label>
+          <div class="relative">
+            <input type="number" id="harga" step="0.01" placeholder="0.00" 
+                   class="w-full px-4 py-3 bg-iosGray rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-iosBlue">
+            <span class="absolute right-4 top-3.5 text-gray-500">USD</span>
+          </div>
+        </div>
+        
+        <!-- Ongkir -->
+        <div class="space-y-1">
+          <label class="text-iosDarkGray text-sm font-medium">Ongkos Kirim (USD)</label>
+          <div class="relative">
+            <input type="number" id="ongkir" step="0.01" placeholder="0.00" 
+                   class="w-full px-4 py-3 bg-iosGray rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-iosBlue">
+            <span class="absolute right-4 top-3.5 text-gray-500">USD</span>
+          </div>
+        </div>
+        
+        <!-- Kurs -->
+        <div class="space-y-1">
+          <label class="text-iosDarkGray text-sm font-medium">Kurs USD ke IDR</label>
+          <div class="relative">
+            <input type="number" id="kurs" value="16000" 
+                   class="w-full px-4 py-3 bg-iosGray rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-iosBlue">
+            <span class="absolute right-4 top-3.5 text-gray-500">IDR</span>
+          </div>
+        </div>
+        
+        <!-- NPWP Toggle -->
+        <div class="flex items-center justify-between py-3">
+          <label class="text-iosDarkGray text-sm font-medium">Punya NPWP?</label>
+          <div class="flex items-center">
+            <span id="npwpLabel" class="text-sm mr-2">Tidak</span>
+            <div id="npwpToggle" class="ios-toggle"></div>
+            <input type="hidden" id="npwp" value="tidak">
+          </div>
+        </div>
+        
+        <!-- Calculate Button -->
+        <button onclick="hitungPajak()" 
+                class="w-full bg-iosBlue text-white py-3 rounded-lg font-medium text-lg hover:bg-blue-600 active:bg-blue-700 transition-colors">
+          Hitung Pajak
+        </button>
+      </div>
+    </div>
+    
+    <!-- Results Card -->
+    <div id="output" class="bg-white rounded-xl shadow-sm mt-6 p-6 hidden">
+      <h2 class="text-lg font-semibold mb-4">Rincian Pajak</h2>
+      
+      <div class="space-y-4">
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-iosDarkGray">Nilai CIF (Rp)</span>
+          <span id="cif" class="font-medium">Rp 0</span>
+        </div>
+        
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-iosDarkGray">Bea Masuk (10%)</span>
+          <span id="beaMasuk" class="font-medium">Rp 0</span>
+        </div>
+        
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-iosDarkGray">PPN (11%)</span>
+          <span id="ppn" class="font-medium">Rp 0</span>
+        </div>
+        
+        <div class="flex justify-between border-b pb-2">
+          <span class="text-iosDarkGray">PPh (<span id="pphRate">0</span>%)</span>
+          <span id="pph" class="font-medium">Rp 0</span>
+        </div>
+        
+        <div class="flex justify-between border-b-2 border-gray-200 pb-3">
+          <span class="text-iosDarkGray font-medium">Total Pajak</span>
+          <span id="totalPajak" class="font-semibold">Rp 0</span>
+        </div>
+        
+        <div class="flex justify-between pt-2">
+          <span class="text-lg font-medium">Total Biaya</span>
+          <span id="totalBiaya" class="text-xl font-bold text-iosBlue">Rp 0</span>
+        </div>
+      </div>
+      
+      <div class="mt-6 bg-blue-50 rounded-lg p-3 flex items-start">
+        <i class="fas fa-info-circle text-blue-500 mt-1 mr-2"></i>
+        <p class="text-sm text-blue-800">Total biaya termasuk harga barang, ongkir, dan semua pajak yang berlaku.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Toggle NPWP
+    const npwpToggle = document.getElementById('npwpToggle');
+    const npwpLabel = document.getElementById('npwpLabel');
+    const npwpInput = document.getElementById('npwp');
+    
+    npwpToggle.addEventListener('click', function() {
+      this.classList.toggle('active');
+      if (this.classList.contains('active')) {
+        npwpLabel.textContent = 'Ya';
+        npwpInput.value = 'ya';
+      } else {
+        npwpLabel.textContent = 'Tidak';
+        npwpInput.value = 'tidak';
+      }
+    });
+
+    // Format currency
+    function formatRupiah(amount) {
+      return 'Rp ' + amount.toLocaleString('id-ID');
+    }
+
+    // Calculate tax
+    function hitungPajak() {
+      let harga = parseFloat(document.getElementById("harga").value) || 0;
+      let ongkir = parseFloat(document.getElementById("ongkir").value) || 0;
+      let kurs = parseFloat(document.getElementById("kurs").value) || 16000;
+      let npwp = document.getElementById("npwp").value;
+
+      let cifUSD = harga + ongkir;
+      let cifIDR = cifUSD * kurs;
+
+      let beaMasuk = 0.10 * cifIDR;
+      let ppn = 0.11 * (cifIDR + beaMasuk);
+      let pphRate = npwp === "ya" ? 0.10 : 0.20;
+      let pph = pphRate * (cifIDR + beaMasuk);
+
+      let totalPajak = beaMasuk + ppn + pph;
+      let totalBiaya = cifIDR + totalPajak;
+
+      // Update UI
+      document.getElementById("output").classList.remove("hidden");
+      document.getElementById("cif").textContent = formatRupiah(cifIDR);
+      document.getElementById("beaMasuk").textContent = formatRupiah(beaMasuk);
+      document.getElementById("ppn").textContent = formatRupiah(ppn);
+      document.getElementById("pphRate").textContent = pphRate * 100;
+      document.getElementById("pph").textContent = formatRupiah(pph);
+      document.getElementById("totalPajak").textContent = formatRupiah(totalPajak);
+      document.getElementById("totalBiaya").textContent = formatRupiah(totalBiaya);
+      
+      // Smooth scroll to results
+      document.getElementById("output").scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>
